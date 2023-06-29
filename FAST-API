@@ -1,0 +1,65 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List
+
+//Creating an instance of FastApi
+app = FastAPI()
+
+
+database = []
+
+
+class Item(BaseModel):
+    id: int
+    name: str
+    price: float
+    quantity: int
+
+
+@app.get("/items")
+async def get_items():
+    return database
+
+
+@app.post("/items")
+async def create_item(item: Item):
+    database.append(item)
+    return {"message": "Item has been created"}
+
+
+@app.get("/items/{item_id}")
+async def get_item(item_id: int):
+    for item in database:
+        if item.id == item_id:
+            return item
+    return {"message": "Item was not found in the database"}
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item):
+    for idx, existing_item in enumerate(database):
+        if existing_item.id == item_id:
+            database[idx] = item
+            return {"message": "Item updated successfully"}
+    return {"message": "Item not found"}
+
+
+@app.delete("/items/{item_id}")
+async def delete_item(item_id: int):
+    for idx, item in enumerate(database):
+        if item.id == item_id:
+            del database[idx]
+            return {"message": "Item deleted"}
+    return {"message": "Item not found "}
+
+
+@app.post("/inventory")
+async def manage_inventory(item_qty: List[Item]):
+    for item in item_qty:
+        for idx, existing_item in enumerate(database):
+            if existing_item.id == item.id:
+                if existing_item.quantity >= item.quantity:
+                    database[idx].quantity -= item.quantity
+                else:
+                    return {"message": f"Not enough quantity for item with id {item.id}"}
+    return {"message": "Inventory managed successfully"}
